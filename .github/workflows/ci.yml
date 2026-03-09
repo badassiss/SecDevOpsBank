@@ -11,30 +11,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout du code
+      - name: Checkout du code
         uses: actions/checkout@v3
 
-      - name: 🐍 Configuration de Python
+      - name: Configuration du python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: 3.13.1
 
-      - name: 📦 Installation des dépendances
+      - name: Installation des dépendances
         run: |
-          cd app
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: 🧪 Exécution des tests
+      - name: Execution des tests
         run: |
           cd tests
           pip install pytest
           pytest test_app.py -v
 
-      - name: 📊 Rapport de test
+      - name: Rapport des tests
         if: always()
         run: |
-          echo "✅ Tests terminés"
-          echo "📝 Consultez les logs ci-dessus pour les détails"
+          echo "tests terminés"
+          echo "Consultez les logs ci-dessus pour les détails"
 
       - name: 🔍 Vérification de la structure du projet
         run: |
@@ -42,7 +42,7 @@ jobs:
           ls -la
           echo ""
 
-      - name: afficher des informations
+      - name: Afficher des informations
         run: |
           echo "Pipeline executed with success"
           echo "Commit SHA: ${{ github.sha }}"
