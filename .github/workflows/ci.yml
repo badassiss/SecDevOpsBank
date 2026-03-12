@@ -50,7 +50,7 @@ jobs:
           echo "Consultez les logs ci-dessus pour les détails"
 
       - name: Upload des rapports de securité
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: security-reports
           path: |
