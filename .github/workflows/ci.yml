@@ -32,6 +32,7 @@ jobs:
           bandit app.py -f json -o bandit-report.json
 
       - name: SCA - Scan Safety
+        if: always()
         run: |
           echo "Safety scan started (Depandancies scan Tool)"
           safety scan -r requirements.txt --full-report
