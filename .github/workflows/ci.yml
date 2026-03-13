@@ -50,6 +50,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Scan Trivy
+        if: always()
         uses: aquasecurity/trivy-action@master # https://github.com/aquasecurity/trivy-action#uses
         with:
           image-ref: "secdevopsbank:${{ github.sha }}"
