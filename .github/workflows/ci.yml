@@ -69,11 +69,12 @@ jobs:
           sleep 10
 
       - name: 🕷️ ZAP Baseline Scan
+        if: always()
         uses: zaproxy/action-baseline@v0.10.0
         with:
-          target: 'http://localhost:5000'
-          rules_file_name: '.zap/rules.tsv'
-          cmd_options: '-a -J zap_report.json -r zap_report.html'
+          target: "http://localhost:5000"
+          rules_file_name: ".zap/rules.tsv"
+          cmd_options: "-a -J zap_report.json -r zap_report.html"
           allow_issue_writing: false
           fail_action: false
 
