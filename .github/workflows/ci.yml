@@ -47,6 +47,7 @@ jobs:
           docker save secdevopsbank:${{ github.sha }} -o /tmp/secdevopsbank.tar
 
       - name: Installation de Trivy
+        if: always()
         run: |
           sudo apt-get update
           sudo apt-get install -y wget apt-transport-https gnupg lsb-release
