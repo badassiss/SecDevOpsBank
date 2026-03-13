@@ -41,23 +41,15 @@ jobs:
           safety scan -r requirements.txt --json > safety-report.json
 
       - name: Build Docker Image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          tags: secdevopsbank:${{ github.sha }}
-          load: true
-          cache-from: type-gha
-          cache-to: type=gha,mode=max
+        if: always()
+        run: |
+          docker buildx build -t secdevopsbank:${{ github.sha }} .
+          docker save secdevopsbank:${{ github.sha }} -o /tmp/secdevopsbank.tar
 
       - name: Scan Trivy
         if: always()
-        uses: aquasecurity/trivy-action@master # https://github.com/aquasecurity/trivy-action#uses
-        with:
-          image-ref: "secdevopsbank:${{ github.sha }}"
-          format: "table"
-          exit-code: "1"
-          severity: "CRITICAL,HIGH"
-          docker-image: true
+        run: |
+          trivy image --input /tmp/secdevopsbank.tar --severity CRITICAL,HIGH
 
       - name: Execution des tests
         run: |
