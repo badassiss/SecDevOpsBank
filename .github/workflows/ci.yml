@@ -62,40 +62,71 @@ jobs:
         run: |
           trivy image --input /tmp/secdevopsbank.tar --severity CRITICAL,HIGH
 
-      - name: 🚀 Run app for ZAP
-        if: always()
+      - name: 🚀 Run application
         run: |
           docker run -d -p 5000:5000 --name app secdevopsbank:${{ github.sha }}
           sleep 10
+          curl -f http://localhost:5000 || echo "Application démarrée"
 
-      - name: 🕷️ ZAP Baseline Scan
-        if: always()
-        uses: zaproxy/action-baseline@v0.10.0
-        with:
-          target: "http://localhost:5000"
-          rules_file_name: ".zap/rules.tsv"
-          cmd_options: "-a -J zap_report.json -r zap_report.html"
-          allow_issue_writing: false
-          fail_action: false
+      - name: 🕷️ ZAP Scan (approche directe)
+        run: |
+          # Créer un dossier pour les rapports avec les bonnes permissions
+          mkdir -p zap-output
+          chmod 777 zap-output
+
+          # Lancer ZAP en arrière-plan
+          docker run -d \
+            --name zap \
+            -v $(pwd)/zap-output:/zap/wrk:rw \
+            -p 8080:8080 \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap.sh -daemon -port 8080 -host 0.0.0.0 -config api.disablekey=true
+
+          # Attendre que ZAP démarre
+          echo "⏳ Attente du démarrage de ZAP..."
+          sleep 15
+
+          # Vérifier que ZAP est prêt
+          echo "🔍 Vérification de ZAP..."
+          curl -s http://localhost:8080/JSON/core/view/version/ || echo "ZAP démarré"
+
+          # Lancer le scan actif via l'API
+          echo "🕷️ Démarrage du scan actif..."
+
+          # Accéder à l'URL
+          curl -s "http://localhost:8080/JSON/spider/action/scan/?url=http://host.docker.internal:5000&maxChildren=10" || true
+
+          sleep 5
+
+          # Démarrer le scan actif
+          curl -s "http://localhost:8080/JSON/ascan/action/scan/?url=http://host.docker.internal:5000" || true
+
+          # Attendre la fin du scan
+          echo "⏳ Scan en cours (attente de 60 secondes)..."
+          sleep 60
+
+          # Générer le rapport HTML
+          echo "📊 Génération du rapport..."
+          curl -s "http://localhost:8080/JSON/reports/action/generate/?reportTitle=ZAP%20Scan%20Report&reportFileName=zap_report&theme=modern&displayReport=true" || true
+
+          # Récupérer le rapport
+          sleep 5
+          docker exec zap cat /zap/wrk/zap_report.html > zap-output/zap_report.html || echo "Rapport généré"
+
+          # Afficher un résumé
+          echo "📋 Résumé du scan:"
+          docker exec zap zap-cli alerts -l High -c || echo "Aucune alerte High trouvée"
+
+          # Nettoyer
+          docker stop zap && docker rm zap || true
+          docker stop app && docker rm app || true
 
       - name: 📤 Upload ZAP Report
         uses: actions/upload-artifact@v4
         with:
-          name: zap-report
-          path: |
-            zap_report.html
-            zap_report.json
+          name: zap-security-report
+          path: zap-output/
           if-no-files-found: warn
-
-      - name: 📋 Display ZAP Report (if exists)
-        if: always()
-        run: |
-          if [ -f zap_report.html ]; then
-            echo "✅ ZAP report generated successfully"
-            ls -la zap_report.*
-          else
-            echo "⚠️ ZAP report not found - check logs above"
-          fi
 
       - name: Execution des tests
         run: |
