@@ -63,12 +63,14 @@ jobs:
           trivy image --input /tmp/secdevopsbank.tar --severity CRITICAL,HIGH
 
       - name: 🚀 Run application
+        if: always()
         run: |
           docker run -d -p 5000:5000 --name app secdevopsbank:${{ github.sha }}
           sleep 10
           curl -f http://localhost:5000 || echo "Application démarrée"
 
       - name: 🕷️ ZAP Scan (approche directe)
+        if: always()
         run: |
           # Créer un dossier pour les rapports avec les bonnes permissions
           mkdir -p zap-output
@@ -122,6 +124,7 @@ jobs:
           docker stop app && docker rm app || true
 
       - name: 📤 Upload ZAP Report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: zap-security-report
@@ -141,6 +144,7 @@ jobs:
           echo "Consultez les logs ci-dessus pour les détails"
 
       - name: Upload des rapports de securité
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: security-reports
@@ -155,6 +159,7 @@ jobs:
           echo ""
 
       - name: Afficher des informations
+        if: always()
         run: |
           echo "Pipeline executed with success"
           echo "Commit SHA: ${{ github.sha }}"
